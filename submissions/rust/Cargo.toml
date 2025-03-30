@@ -1,0 +1,18 @@
+[package]
+name = "onion_routing"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bitcoin = { version = "0.32.2", default-features = false, features = ["secp-recovery"] }
+chacha20 = "0.9"
+rand = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+hex = "0.4"
+generic-array = "0.14"
+k256 = { version = "0.10", features = ["ecdh"] }
+anyhow = "1.0"
+secp256k1 = "0.30"
+sha2 = "0.10.8"
+hmac = "0.12.1"
