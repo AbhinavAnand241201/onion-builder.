@@ -1,4 +1,5 @@
 #!/bin/bash
+
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 <output_directory> <input_file>"
     exit 1
@@ -8,22 +9,36 @@ fi
 output_directory="$1"
 input_file="$2"
 
-# Please fill in the version of the programming language you used here to help us with debugging if we run into problems!
+# Version information
 version="0.1.0"
 
-# Check if the 'version' variable is not null
-if [ -z "$version" ]; then
-    echo "Please fill in the version of the programming language you used."
+# Validate inputs
+if [ ! -f "$input_file" ]; then
+    echo "Error: Input file $input_file does not exist"
     exit 1
 fi
 
-# Your run command here - rust:
-# sudo cargo build --manifest-path ./submissions/rust/Cargo.toml
-# ./submissions/rust/target/debug/onion_routing "$output_directory" "$input_file"
+if [ ! -d "$output_directory" ]; then
+    mkdir -p "$output_directory" || {
+        echo "Error: Failed to create output directory"
+        exit 1
+    }
+fi
 
-# Let's try in Python
-python3 -m venv venv
-source ./venv/bin/activate
-pip3 install pycryptodomex
-pip3 install electrum-ecc
+# Python solution
+echo "Running Python solution version $version"
+
+# Create and activate virtual environment
+python3 -m venv ./submissions/venv
+source ./submissions/venv/bin/activate
+
+# Install dependencies
+pip install -r ./submissions/python/requirements.txt
+
+# Run the Python script
 python3 ./submissions/python/main.py "$output_directory" "$input_file"
+
+# Deactivate virtual environment
+deactivate
+
+echo "Onion packet generated successfully in $output_directory/output.txt"
