@@ -9,7 +9,6 @@ from Cryptodome.Cipher import ChaCha20
 from ecdsa import SigningKey, VerifyingKey, SECP256k1
 from ecdsa.util import number_to_string
 
-# Constants from BOLT 04
 ONION_VERSION = 0x00
 HOP_DATA_LEN = 1300
 HOP_PAYLOAD_LEN = 65  # 1 byte length + 32 byte HMAC + 32 byte payload (max)
@@ -18,11 +17,11 @@ MU = b'mu'
 UM = b'um'
 
 def generate_key(key_type, secret):
-    """Generate key using HKDF with SHA256"""
+  
     return hashlib.sha256(key_type + secret).digest()
 
 def generate_filler(rho_key, num_hops):
-    """Generate filler bytes using pseudo-random stream"""
+  
     filler = bytearray()
     stream = generate_cipher_stream(rho_key, HOP_DATA_LEN * (num_hops - 1))
     for i in range(num_hops - 1):
@@ -31,13 +30,13 @@ def generate_filler(rho_key, num_hops):
     return bytes(filler)
 
 def generate_cipher_stream(key, length):
-    """Generate ChaCha20 cipher stream with 96-bit null nonce"""
+  
     nonce = bytes(12)
     cipher = ChaCha20.new(key=key, nonce=nonce)
     return cipher.encrypt(bytes(length))
 
 def xor_bytes(a, b):
-    """XOR two byte strings"""
+  
     return bytes(x ^ y for x, y in zip(a, b))
 
 class OnionBuilder:
@@ -52,17 +51,17 @@ class OnionBuilder:
         shared_secrets = []
         onion_payload = bytearray(HOP_DATA_LEN)
         
-        # Initialize with random bytes
+      
         initial_padding = generate_cipher_stream(self.session_key, HOP_DATA_LEN)
         onion_payload[:] = initial_padding
-        
-        # Process hops in reverse order
+       
+       
         for i in reversed(range(self.num_hops)):
             hop = self.hops[i]
             payload = unhexlify(hop['payload'])
             
-            # Validate payload size
-            if len(payload) > 32:  # Max payload per BOLT-04
+           
+            if len(payload) > 32: 
                 raise ValueError(f"Payload for hop {i} too large ({len(payload)} > 32 bytes)")
             
             # Generate ephemeral key
@@ -92,25 +91,25 @@ class OnionBuilder:
             hop_data = bytes([len(payload)]) + payload + hmac_val
             hop_data = hop_data.ljust(HOP_PAYLOAD_LEN, b'\x00')
             
-            # Apply filler for intermediate hops
+           
             if i > 0:
                 filler = generate_filler(rho_key, self.num_hops - i)
                 onion_payload = xor_bytes(onion_payload, filler)
             
-            # Insert hop data
+          
             start_pos = i * HOP_PAYLOAD_LEN
             onion_payload[start_pos:start_pos+HOP_PAYLOAD_LEN] = hop_data
             
-            # Encrypt
+           
             stream = generate_cipher_stream(rho_key, HOP_DATA_LEN)
             onion_payload = xor_bytes(onion_payload, stream)
             
-            # Generate blinding factor
+          
             if i > 0:
                 bf_input = ephemeral_keys[0].to_string() + hop_data[:HOP_PAYLOAD_LEN]
                 ephemeral_key = hmac.new(um_key, bf_input, hashlib.sha256).digest()
         
-        # Final packet assembly
+      
         first_ephemeral_pubkey = ephemeral_keys[0].to_string()
         onion_packet = bytes([ONION_VERSION]) + first_ephemeral_pubkey + onion_payload
         packet_hmac = hmac.new(
@@ -122,7 +121,7 @@ class OnionBuilder:
         return hexlify(onion_packet + packet_hmac).decode('ascii')
 
 def ecdh(private_key, peer_pubkey):
-    """Perform ECDH key exchange"""
+  
     point = private_key.privkey.secret_multiplier * peer_pubkey.pubkey.point
     return number_to_string(point.x(), SECP256k1.order)
 
@@ -137,7 +136,7 @@ def main():
     with open(input_file, 'r') as f:
         data = json.load(f)
     
-    # Validate input
+   
     required_fields = ['session_key', 'associated_data', 'hops']
     for field in required_fields:
         if field not in data:
